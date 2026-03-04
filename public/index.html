@@ -20,7 +20,8 @@
       </header>
 
       <nav class="tabs">
-        <button class="tab active" data-tab="terminal">Terminal</button>
+        <button class="tab active" data-tab="landing">Home</button>
+        <button class="tab" data-tab="terminal">Terminal</button>
         <button class="tab" data-tab="explorer">Explorer</button>
         <button class="tab" data-tab="editor">Editor</button>
         <button class="tab" data-tab="ai">AI Assistant</button>
@@ -33,7 +34,41 @@
           <div id="fileTree" class="file-tree"></div>
         </aside>
 
-        <section class="panel active" id="panel-terminal">
+        <section class="panel active" id="panel-landing">
+          <h2>Workspace Home</h2>
+          <p class="muted">Quick launch tools inspired by modern ADE workflows.</p>
+          <div class="tool-grid">
+            <button class="tool-card" data-open-tab="terminal"><strong>Terminal Blocks</strong><span>Open/switch multiple terminal workspaces.</span></button>
+            <button class="tool-card" data-open-tab="explorer"><strong>Explorer</strong><span>Browse and open files from your host mounts.</span></button>
+            <button class="tool-card" data-open-tab="editor"><strong>Monaco Editor</strong><span>Edit files with syntax highlighting.</span></button>
+            <button class="tool-card" data-open-tab="ai"><strong>Warp-style AI</strong><span>NL→CLI, command explain, troubleshooting.</span></button>
+            <button class="tool-card" data-open-tab="ops"><strong>Ops Center</strong><span>SSH profiles, secrets, audit logs, workflow catalog.</span></button>
+          </div>
+
+          <div class="ops-grid">
+            <div>
+              <h3>Saved Workflows</h3>
+              <form id="workflowForm" class="stack-form">
+                <input name="name" placeholder="Workflow name" required />
+                <input name="command" placeholder="Command template (deploy --env {{env}})" required />
+                <input name="description" placeholder="Description" />
+                <button type="submit">Save Workflow</button>
+              </form>
+              <ul id="workflowList"></ul>
+            </div>
+            <div>
+              <h3>Notebooks / Runbooks</h3>
+              <form id="notebookForm" class="stack-form">
+                <input name="title" placeholder="Notebook title" required />
+                <textarea name="content" placeholder="Step-by-step runbook notes" required></textarea>
+                <button type="submit">Save Notebook</button>
+              </form>
+              <ul id="notebookList"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="panel-terminal">
           <div class="terminal-toolbar">
             <div id="terminalTabs" class="terminal-tabs"></div>
             <button id="newTerminalBtn">+ Terminal</button>
@@ -83,6 +118,16 @@
                 <button type="submit">Store Secret</button>
               </form>
               <ul id="secretList"></ul>
+            </div>
+            <div>
+              <h3>Launch Configurations</h3>
+              <form id="launchForm" class="stack-form">
+                <input name="name" placeholder="Launch name" required />
+                <input name="cwd" placeholder="Working directory" required />
+                <input name="command" placeholder="Startup command" required />
+                <button type="submit">Save Launch Config</button>
+              </form>
+              <ul id="launchList"></ul>
             </div>
           </div>
           <h3>Audit Log</h3>

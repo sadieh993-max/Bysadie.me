@@ -20,6 +20,9 @@ const AUTH_ENABLED = process.env.AUTH_ENABLED === 'true';
 const USERS_FILE = process.env.USERS_FILE || path.join(DATA_DIR, 'users.json');
 const SSH_FILE = path.join(DATA_DIR, 'ssh-profiles.json');
 const SECRETS_FILE = path.join(DATA_DIR, 'secrets.json');
+const WORKFLOWS_FILE = path.join(DATA_DIR, 'workflows.json');
+const NOTEBOOKS_FILE = path.join(DATA_DIR, 'notebooks.json');
+const LAUNCH_FILE = path.join(DATA_DIR, 'launch-configs.json');
 const AUDIT_FILE = path.join(DATA_DIR, 'audit.log');
 
 app.use(express.json({ limit: '2mb' }));
@@ -30,8 +33,23 @@ const defaultUsers = {
 };
 
 const rolePermissions = {
-  viewer: new Set(['file_read', 'file_list', 'ai_query', 'audit_read', 'ssh_read']),
-  operator: new Set(['file_read', 'file_list', 'file_write', 'ai_query', 'shell', 'audit_read', 'ssh_read', 'ssh_write']),
+  viewer: new Set(['file_read', 'file_list', 'ai_query', 'audit_read', 'ssh_read', 'workflow_read', 'notebook_read', 'launch_read']),
+  operator: new Set([
+    'file_read',
+    'file_list',
+    'file_write',
+    'ai_query',
+    'shell',
+    'audit_read',
+    'ssh_read',
+    'ssh_write',
+    'workflow_read',
+    'workflow_write',
+    'notebook_read',
+    'notebook_write',
+    'launch_read',
+    'launch_write'
+  ]),
   admin: new Set([
     'file_read',
     'file_list',
@@ -42,7 +60,13 @@ const rolePermissions = {
     'ssh_read',
     'ssh_write',
     'secret_read',
-    'secret_write'
+    'secret_write',
+    'workflow_read',
+    'workflow_write',
+    'notebook_read',
+    'notebook_write',
+    'launch_read',
+    'launch_write'
   ])
 };
 
@@ -51,6 +75,9 @@ async function ensureDataFiles() {
   await ensureJsonFile(USERS_FILE, defaultUsers);
   await ensureJsonFile(SSH_FILE, { profiles: [] });
   await ensureJsonFile(SECRETS_FILE, { secrets: [] });
+  await ensureJsonFile(WORKFLOWS_FILE, { workflows: [] });
+  await ensureJsonFile(NOTEBOOKS_FILE, { notebooks: [] });
+  await ensureJsonFile(LAUNCH_FILE, { launchConfigs: [] });
   await fs.appendFile(AUDIT_FILE, '');
 }
 
@@ -317,6 +344,104 @@ app.delete('/api/secrets/:id', requirePermission('secret_write'), async (req, re
   await writeJson(SECRETS_FILE, db);
   await logAudit(req.auth.username, 'secret_write', req.params.id, 'ok', 'delete');
   res.json({ ok: true, removed: before - db.secrets.length });
+});
+
+app.get('/api/workflows', requirePermission('workflow_read'), async (_req, res) => {
+  const db = await readJson(WORKFLOWS_FILE);
+  res.json(db);
+});
+
+app.post('/api/workflows', requirePermission('workflow_write'), async (req, res) => {
+  const { name, command, description } = req.body || {};
+  if (!name || !command) {
+    return res.status(400).json({ error: 'name and command are required.' });
+  }
+  const db = await readJson(WORKFLOWS_FILE);
+  const workflow = {
+    id: crypto.randomUUID(),
+    name,
+    command,
+    description: description || '',
+    updatedAt: new Date().toISOString()
+  };
+  db.workflows = [workflow, ...db.workflows.filter((item) => item.name !== name)];
+  await writeJson(WORKFLOWS_FILE, db);
+  await logAudit(req.auth.username, 'workflow_write', name, 'ok');
+  res.json({ ok: true, workflow });
+});
+
+app.delete('/api/workflows/:id', requirePermission('workflow_write'), async (req, res) => {
+  const db = await readJson(WORKFLOWS_FILE);
+  const before = db.workflows.length;
+  db.workflows = db.workflows.filter((workflow) => workflow.id !== req.params.id);
+  await writeJson(WORKFLOWS_FILE, db);
+  await logAudit(req.auth.username, 'workflow_write', req.params.id, 'ok', 'delete');
+  res.json({ ok: true, removed: before - db.workflows.length });
+});
+
+app.get('/api/notebooks', requirePermission('notebook_read'), async (_req, res) => {
+  const db = await readJson(NOTEBOOKS_FILE);
+  res.json(db);
+});
+
+app.post('/api/notebooks', requirePermission('notebook_write'), async (req, res) => {
+  const { title, content } = req.body || {};
+  if (!title || !content) {
+    return res.status(400).json({ error: 'title and content are required.' });
+  }
+  const db = await readJson(NOTEBOOKS_FILE);
+  const notebook = {
+    id: crypto.randomUUID(),
+    title,
+    content,
+    updatedAt: new Date().toISOString()
+  };
+  db.notebooks = [notebook, ...db.notebooks.filter((item) => item.title !== title)];
+  await writeJson(NOTEBOOKS_FILE, db);
+  await logAudit(req.auth.username, 'notebook_write', title, 'ok');
+  res.json({ ok: true, notebook });
+});
+
+app.delete('/api/notebooks/:id', requirePermission('notebook_write'), async (req, res) => {
+  const db = await readJson(NOTEBOOKS_FILE);
+  const before = db.notebooks.length;
+  db.notebooks = db.notebooks.filter((notebook) => notebook.id !== req.params.id);
+  await writeJson(NOTEBOOKS_FILE, db);
+  await logAudit(req.auth.username, 'notebook_write', req.params.id, 'ok', 'delete');
+  res.json({ ok: true, removed: before - db.notebooks.length });
+});
+
+app.get('/api/launch-configs', requirePermission('launch_read'), async (_req, res) => {
+  const db = await readJson(LAUNCH_FILE);
+  res.json(db);
+});
+
+app.post('/api/launch-configs', requirePermission('launch_write'), async (req, res) => {
+  const { name, cwd, command } = req.body || {};
+  if (!name || !cwd || !command) {
+    return res.status(400).json({ error: 'name, cwd and command are required.' });
+  }
+  const db = await readJson(LAUNCH_FILE);
+  const launch = {
+    id: crypto.randomUUID(),
+    name,
+    cwd: safeResolve(cwd),
+    command,
+    updatedAt: new Date().toISOString()
+  };
+  db.launchConfigs = [launch, ...db.launchConfigs.filter((item) => item.name !== name)];
+  await writeJson(LAUNCH_FILE, db);
+  await logAudit(req.auth.username, 'launch_write', name, 'ok');
+  res.json({ ok: true, launch });
+});
+
+app.delete('/api/launch-configs/:id', requirePermission('launch_write'), async (req, res) => {
+  const db = await readJson(LAUNCH_FILE);
+  const before = db.launchConfigs.length;
+  db.launchConfigs = db.launchConfigs.filter((launch) => launch.id !== req.params.id);
+  await writeJson(LAUNCH_FILE, db);
+  await logAudit(req.auth.username, 'launch_write', req.params.id, 'ok', 'delete');
+  res.json({ ok: true, removed: before - db.launchConfigs.length });
 });
 
 app.get('/api/audit', requirePermission('audit_read'), async (req, res) => {

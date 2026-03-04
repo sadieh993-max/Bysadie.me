@@ -1,60 +1,55 @@
 # Nexus Terminal (Self-Hosted Warp-Style Dev Workspace)
 
-Nexus Terminal is a self-hosted AI-enabled terminal workspace you can run in your homelab.
+Nexus Terminal is a self-hosted, web-based developer workspace inspired by Warp-style flows.  
+This build now includes a **landing page** with tool launch cards and fixed internal navigation links.
 
-It now includes these requested upgrades:
+## Included Features
+
+- Landing page dashboard with quick links to each workspace section
+- Multi-terminal tabs/workspaces (Socket.IO + node-pty)
 - Monaco editor + syntax highlighting
-- Multiple terminal tabs/workspaces
-- SSH profile manager
-- RBAC + audit logging + secrets vault baseline
+- File explorer and file save APIs
+- AI assistant endpoint (Ollama by default)
+- Ops center:
+  - SSH profile manager
+  - Secrets manager (baseline)
+  - Audit logs
+  - Launch configurations
+- Warp-drive style data tools:
+  - Workflows catalog (saved command templates)
+  - Notebooks/runbooks (saved operational notes)
+- RBAC roles: `viewer`, `operator`, `admin`
 
 ---
 
-## 1) What this gives you
-
-- **Terminal workspaces**: Multiple shell tabs over websocket + `node-pty`
-- **Explorer + editor**: Browse files and edit with Monaco
-- **AI assistant**: Ask devops/coding questions from inside the app (Ollama local by default)
-- **Ops center**:
-  - SSH profile CRUD
-  - Secrets metadata + storage
-  - Audit event feed
-- **Role model**:
-  - `viewer`: read + AI + audit + read SSH profiles
-  - `operator`: viewer + shell + file writes + SSH writes
-  - `admin`: operator + secrets management
-
----
-
-## 2) Prerequisites
-
-- Docker Desktop / Docker Engine
-- Node.js 20+ (if running directly)
-- Optional local AI backend: Ollama
-
----
-
-## 3) Local run
+## 1) Quick Start (Local)
 
 ```bash
 npm install
 npm start
 ```
 
-Open `http://localhost:3000`
+Open:
+
+```text
+http://localhost:3000
+```
 
 ---
 
-## 4) Initial auth (RBAC)
+## 2) Auth / RBAC
 
-RBAC is controlled by env var:
+Set environment variables:
 
-- `AUTH_ENABLED=false` (default): local admin bypass for single-user homelab
-- `AUTH_ENABLED=true`: API requires headers:
-  - `x-nexus-user`
-  - `x-nexus-token`
+- `AUTH_ENABLED=false` (default local bypass)
+- `AUTH_ENABLED=true` (requires headers)
 
-Default user store is `data/users.json` (auto-created):
+Headers used by UI + API:
+
+- `x-nexus-user`
+- `x-nexus-token`
+
+Default user database (`data/users.json`):
 
 ```json
 {
@@ -64,26 +59,27 @@ Default user store is `data/users.json` (auto-created):
 }
 ```
 
-Change token immediately.
+Change this token immediately in production.
 
 ---
 
-## 5) Free/local AI setup (Ollama)
+## 3) Free AI Backend (Ollama)
 
 ```bash
 ollama pull qwen2.5-coder:7b
 ollama serve
 ```
 
-Nexus default endpoint:
+Environment variables:
+
 - `OLLAMA_URL=http://127.0.0.1:11434/api/generate`
 - `OLLAMA_MODEL=qwen2.5-coder:7b`
 
 ---
 
-## 6) Docker deploy (homelab)
+## 4) Docker / Homelab Deploy
 
-Create `docker-compose.yml`:
+Example `docker-compose.yml`:
 
 ```yaml
 version: "3.8"
@@ -102,21 +98,18 @@ services:
       - DATA_DIR=/app/data
     volumes:
       - ./data:/app/data
-      # Linux host (very permissive)
       - /:/host:rw
     stdin_open: true
     tty: true
 ```
 
-Then:
+Run:
 
 ```bash
 docker compose up -d --build
 ```
 
----
-
-## 7) Windows + Docker Desktop host mounts
+Windows Docker Desktop volume example:
 
 ```yaml
 volumes:
@@ -124,24 +117,31 @@ volumes:
   - D:\\:/mnt/d:rw
 ```
 
-Browse those from Explorer.
-
 ---
 
-## 8) API surface
+## 5) API Endpoints
+
+Core:
 
 - `GET /api/health`
 - `GET /api/files?path=...`
 - `GET /api/file?path=...`
 - `POST /api/file`
 - `POST /api/ai`
+
+Ops:
+
 - `GET/POST/DELETE /api/ssh-profiles`
 - `GET/POST/DELETE /api/secrets`
 - `GET /api/audit`
+- `GET/POST/DELETE /api/launch-configs`
 
----
+Landing tools:
 
-## 9) Terminal workspace events (Socket.IO)
+- `GET/POST/DELETE /api/workflows`
+- `GET/POST/DELETE /api/notebooks`
+
+Terminal socket events:
 
 - `terminal:create`
 - `terminal:created`
@@ -153,18 +153,10 @@ Browse those from Explorer.
 
 ---
 
-## 10) Security notes (important)
+## 6) Security Notes
 
-- Secrets are baseline storage (not hardware-backed vault encryption).
-- Do not expose without an upstream auth gateway + TLS.
-- Prefer `ALLOW_ANY_PATH=false` for safer path scope.
-- Restrict Docker host mounts to only required directories.
+- Secrets storage is baseline JSON storage (not HSM/Vault encrypted).
+- Put Nexus behind TLS and upstream auth for internet-exposed deployments.
+- Prefer `ALLOW_ANY_PATH=false` where possible.
+- Restrict host-mounted volumes to least privilege.
 
----
-
-## 11) Next recommended hardening
-
-- Replace simple token store with OIDC + JWT + signed sessions
-- Encrypt secrets at rest using external KMS/Vault
-- Add audit export to Loki/Elastic/SIEM
-- Add SSH execution broker with command allowlists and approvals
