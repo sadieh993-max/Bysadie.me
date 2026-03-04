@@ -1,0 +1,128 @@
+:root {
+  --bg: #0b1220;
+  --panel: #121a2b;
+  --panel-light: #1a243b;
+  --text: #d9e2ff;
+  --muted: #9fb2d9;
+  --accent: #5ea2ff;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: Inter, Segoe UI, Roboto, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #111c33, #070b15 60%);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  height: 100vh;
+  backdrop-filter: blur(8px);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: rgba(18, 26, 43, 0.8);
+  border-bottom: 1px solid #24314d;
+}
+
+.topbar h1 { margin: 0; font-size: 1.05rem; }
+.breadcrumb { color: var(--muted); font-size: 0.9rem; }
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(18, 26, 43, 0.6);
+  border-bottom: 1px solid #22304f;
+}
+
+.tab {
+  border: 1px solid #2a3960;
+  background: transparent;
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+}
+
+.tab.active { background: #1c2a4a; border-color: var(--accent); }
+
+.workspace {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 0;
+}
+
+.sidebar {
+  border-right: 1px solid #263252;
+  padding: 0.75rem;
+  background: rgba(13, 20, 34, 0.95);
+  overflow: auto;
+}
+
+.sidebar-title { margin-bottom: 0.6rem; color: var(--muted); }
+.file-tree button {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0.25rem;
+  cursor: pointer;
+}
+.file-tree button:hover { background: #1a2742; }
+
+.panel {
+  display: none;
+  padding: 1rem;
+  overflow: auto;
+  min-height: 0;
+}
+.panel.active { display: block; }
+
+#terminal {
+  height: calc(100vh - 160px);
+  border: 1px solid #2a3960;
+  border-radius: 8px;
+  padding: 0.25rem;
+}
+
+#editorArea, #aiPrompt {
+  width: 100%;
+  min-height: 280px;
+  background: var(--panel-light);
+  color: var(--text);
+  border: 1px solid #2c3d62;
+  border-radius: 8px;
+  padding: 0.7rem;
+}
+
+.ai-output {
+  white-space: pre-wrap;
+  margin-bottom: 0.75rem;
+  background: var(--panel-light);
+  border: 1px solid #2a3a60;
+  padding: 0.75rem;
+  border-radius: 8px;
+  min-height: 150px;
+}
+
+button#saveBtn, button#askAiBtn {
+  margin-top: 0.65rem;
+  background: #2554a0;
+  color: white;
+  border: 0;
+  padding: 0.55rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+}

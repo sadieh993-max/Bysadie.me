@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexus Terminal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <h1>Nexus Terminal</h1>
+        <div class="breadcrumb" id="cwdLabel">~</div>
+      </header>
+
+      <nav class="tabs">
+        <button class="tab active" data-tab="terminal">Terminal</button>
+        <button class="tab" data-tab="explorer">Explorer</button>
+        <button class="tab" data-tab="editor">Editor</button>
+        <button class="tab" data-tab="ai">AI Assistant</button>
+      </nav>
+
+      <main class="workspace">
+        <aside class="sidebar">
+          <div class="sidebar-title">Files</div>
+          <div id="fileTree" class="file-tree"></div>
+        </aside>
+
+        <section class="panel active" id="panel-terminal">
+          <div id="terminal"></div>
+        </section>
+
+        <section class="panel" id="panel-explorer">
+          <h2>File Explorer</h2>
+          <div id="explorerPath"></div>
+          <ul id="explorerList"></ul>
+        </section>
+
+        <section class="panel" id="panel-editor">
+          <h2 id="editorPath">Open a file from explorer</h2>
+          <textarea id="editorArea" placeholder="File content"></textarea>
+          <button id="saveBtn">Save file</button>
+        </section>
+
+        <section class="panel" id="panel-ai">
+          <h2>AI Assistant</h2>
+          <div id="aiOutput" class="ai-output"></div>
+          <textarea id="aiPrompt" placeholder="Ask for command suggestions, scripts, troubleshooting..."></textarea>
+          <button id="askAiBtn">Ask AI</button>
+        </section>
+      </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
