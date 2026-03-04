@@ -1,42 +1,87 @@
-# Nexus Terminal (Warp-style for Homelab)
+# Nexus Terminal (Self-Hosted Warp-Style Dev Workspace)
 
-Nexus Terminal is a self-hosted, web-based AI developer terminal inspired by tools like Warp.
-It gives you:
+Nexus Terminal is a self-hosted AI-enabled terminal workspace you can run in your homelab.
 
-- Interactive terminal in browser (real shell using `node-pty`)
-- File explorer + basic editor tabs
-- AI assistant panel (local Ollama by default, so you can run free on homelab)
-- Docker-friendly deployment model
+It now includes these requested upgrades:
+- Monaco editor + syntax highlighting
+- Multiple terminal tabs/workspaces
+- SSH profile manager
+- RBAC + audit logging + secrets vault baseline
 
-> ⚠️ This is powerful. If you allow full host mounts, the app can read/write your files. Run only in trusted networks.
+---
 
-## 1) Prerequisites
+## 1) What this gives you
 
-- Docker Desktop (Windows/macOS) or Docker Engine (Linux)
-- For non-Docker mode: Node.js 20+
-- Optional for free/local AI: [Ollama](https://ollama.com/) and a local model (e.g. `qwen2.5-coder:7b`)
+- **Terminal workspaces**: Multiple shell tabs over websocket + `node-pty`
+- **Explorer + editor**: Browse files and edit with Monaco
+- **AI assistant**: Ask devops/coding questions from inside the app (Ollama local by default)
+- **Ops center**:
+  - SSH profile CRUD
+  - Secrets metadata + storage
+  - Audit event feed
+- **Role model**:
+  - `viewer`: read + AI + audit + read SSH profiles
+  - `operator`: viewer + shell + file writes + SSH writes
+  - `admin`: operator + secrets management
 
-## 2) Quick start (local Node)
+---
+
+## 2) Prerequisites
+
+- Docker Desktop / Docker Engine
+- Node.js 20+ (if running directly)
+- Optional local AI backend: Ollama
+
+---
+
+## 3) Local run
 
 ```bash
 npm install
 npm start
 ```
 
-Open: `http://localhost:3000`
+Open `http://localhost:3000`
 
-## 3) Free local AI setup (Ollama)
+---
 
-Install and run Ollama, then pull model:
+## 4) Initial auth (RBAC)
+
+RBAC is controlled by env var:
+
+- `AUTH_ENABLED=false` (default): local admin bypass for single-user homelab
+- `AUTH_ENABLED=true`: API requires headers:
+  - `x-nexus-user`
+  - `x-nexus-token`
+
+Default user store is `data/users.json` (auto-created):
+
+```json
+{
+  "users": [
+    { "username": "admin", "token": "changeme", "role": "admin" }
+  ]
+}
+```
+
+Change token immediately.
+
+---
+
+## 5) Free/local AI setup (Ollama)
 
 ```bash
 ollama pull qwen2.5-coder:7b
 ollama serve
 ```
 
-Nexus will auto-call `http://127.0.0.1:11434/api/generate`.
+Nexus default endpoint:
+- `OLLAMA_URL=http://127.0.0.1:11434/api/generate`
+- `OLLAMA_MODEL=qwen2.5-coder:7b`
 
-## 4) Docker deployment for homelab
+---
+
+## 6) Docker deploy (homelab)
 
 Create `docker-compose.yml`:
 
@@ -50,29 +95,28 @@ services:
       - "3000:3000"
     environment:
       - PORT=3000
+      - AUTH_ENABLED=true
       - OLLAMA_URL=http://host.docker.internal:11434/api/generate
       - OLLAMA_MODEL=qwen2.5-coder:7b
       - ALLOW_ANY_PATH=true
+      - DATA_DIR=/app/data
     volumes:
-      # Linux host full root mount (very permissive)
+      - ./data:/app/data
+      # Linux host (very permissive)
       - /:/host:rw
-      # Add any extra project folders as needed
-      # - /srv/projects:/workspace/projects:rw
     stdin_open: true
     tty: true
 ```
 
-Then run:
+Then:
 
 ```bash
 docker compose up -d --build
 ```
 
-Open `http://<your-homelab-ip>:3000`.
+---
 
-## 5) Windows + Docker Desktop host file access
-
-If running on Docker Desktop Windows, mount Windows paths explicitly:
+## 7) Windows + Docker Desktop host mounts
 
 ```yaml
 volumes:
@@ -80,41 +124,47 @@ volumes:
   - D:\\:/mnt/d:rw
 ```
 
-Then browse `/mnt/c` or `/mnt/d` in the Nexus explorer.
+Browse those from Explorer.
 
-## 6) Feature map to your request
+---
 
-- **Tabs + code layout**: Terminal / Explorer / Editor / AI tabs.
-- **Terminal backend**: Real `/bin/bash` (Linux) or `powershell.exe` (Windows).
-- **Read/write files**: Explorer + editor APIs.
-- **AI command help**: `/api/ai` route with command-focused system prompt.
-- **Large homelab support**: direct shell, direct filesystem browsing.
+## 8) API surface
 
-## 7) Security hardening (recommended)
+- `GET /api/health`
+- `GET /api/files?path=...`
+- `GET /api/file?path=...`
+- `POST /api/file`
+- `POST /api/ai`
+- `GET/POST/DELETE /api/ssh-profiles`
+- `GET/POST/DELETE /api/secrets`
+- `GET /api/audit`
 
-Before exposing beyond LAN:
+---
 
-- Put behind reverse proxy with auth (Authelia, Traefik forward auth, Cloudflare Access)
-- Set `ALLOW_ANY_PATH=false` to restrict to home directory
-- Run as non-root in container
-- Add command allowlist if sharing with others
+## 9) Terminal workspace events (Socket.IO)
 
-## 8) API endpoints
+- `terminal:create`
+- `terminal:created`
+- `terminal:input`
+- `terminal:resize`
+- `terminal:data`
+- `terminal:close`
+- `terminal:closed`
 
-- `GET /api/health` - backend status
-- `GET /api/files?path=/some/path` - list directory
-- `GET /api/file?path=/some/file` - read file
-- `POST /api/file` - write file `{ path, content }`
-- `POST /api/ai` - ask AI `{ prompt, cwd }`
+---
 
-## 9) Important limits vs full Warp
+## 10) Security notes (important)
 
-Warp has proprietary features (cloud sync, advanced agent workflows, polished native UX).
-This project is a **self-hosted open equivalent baseline** you can extend freely.
+- Secrets are baseline storage (not hardware-backed vault encryption).
+- Do not expose without an upstream auth gateway + TLS.
+- Prefer `ALLOW_ANY_PATH=false` for safer path scope.
+- Restrict Docker host mounts to only required directories.
 
-For next upgrades, add:
+---
 
-- Monaco editor + syntax highlighting
-- Multiple terminal tabs/workspaces
-- SSH profile manager
-- RBAC, command audit logs, and secrets vault integration
+## 11) Next recommended hardening
+
+- Replace simple token store with OIDC + JWT + signed sessions
+- Encrypt secrets at rest using external KMS/Vault
+- Add audit export to Loki/Elastic/SIEM
+- Add SSH execution broker with command allowlists and approvals

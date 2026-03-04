@@ -11,7 +11,12 @@
     <div class="app-shell">
       <header class="topbar">
         <h1>Nexus Terminal</h1>
-        <div class="breadcrumb" id="cwdLabel">~</div>
+        <div class="topbar-right">
+          <div class="breadcrumb" id="cwdLabel">~</div>
+          <input id="authUser" placeholder="user" value="admin" />
+          <input id="authToken" placeholder="token" value="changeme" />
+          <button id="saveAuthBtn">Set Auth</button>
+        </div>
       </header>
 
       <nav class="tabs">
@@ -19,6 +24,7 @@
         <button class="tab" data-tab="explorer">Explorer</button>
         <button class="tab" data-tab="editor">Editor</button>
         <button class="tab" data-tab="ai">AI Assistant</button>
+        <button class="tab" data-tab="ops">Ops</button>
       </nav>
 
       <main class="workspace">
@@ -28,7 +34,11 @@
         </aside>
 
         <section class="panel active" id="panel-terminal">
-          <div id="terminal"></div>
+          <div class="terminal-toolbar">
+            <div id="terminalTabs" class="terminal-tabs"></div>
+            <button id="newTerminalBtn">+ Terminal</button>
+          </div>
+          <div id="terminalArea" class="terminal-area"></div>
         </section>
 
         <section class="panel" id="panel-explorer">
@@ -39,7 +49,7 @@
 
         <section class="panel" id="panel-editor">
           <h2 id="editorPath">Open a file from explorer</h2>
-          <textarea id="editorArea" placeholder="File content"></textarea>
+          <div id="editorArea"></div>
           <button id="saveBtn">Save file</button>
         </section>
 
@@ -49,11 +59,42 @@
           <textarea id="aiPrompt" placeholder="Ask for command suggestions, scripts, troubleshooting..."></textarea>
           <button id="askAiBtn">Ask AI</button>
         </section>
+
+        <section class="panel" id="panel-ops">
+          <h2>Ops Center</h2>
+          <div class="ops-grid">
+            <div>
+              <h3>SSH Profiles</h3>
+              <form id="sshForm" class="stack-form">
+                <input name="name" placeholder="Profile name" required />
+                <input name="host" placeholder="Host" required />
+                <input name="port" placeholder="Port (22)" />
+                <input name="username" placeholder="Username" required />
+                <input name="keyPath" placeholder="Key path (~/.ssh/id_rsa)" />
+                <button type="submit">Save Profile</button>
+              </form>
+              <ul id="sshList"></ul>
+            </div>
+            <div>
+              <h3>Secrets Vault</h3>
+              <form id="secretForm" class="stack-form">
+                <input name="name" placeholder="Secret name" required />
+                <input name="value" placeholder="Secret value" required />
+                <button type="submit">Store Secret</button>
+              </form>
+              <ul id="secretList"></ul>
+            </div>
+          </div>
+          <h3>Audit Log</h3>
+          <button id="refreshAuditBtn">Refresh Audit</button>
+          <pre id="auditOutput" class="audit-output"></pre>
+        </section>
       </main>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
